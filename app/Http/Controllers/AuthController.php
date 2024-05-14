@@ -1,51 +1,50 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\Utilisateur; // Import Utilisateur model
-use Illuminate\Support\Facades\Hash;
 
-use Illuminate\Contracts\Auth\Authenticatable;
-
- class AuthController extends Controller
+class LoginController extends Controller
 {
-    public function showLoginForm()
-    {
-        return view('auth'); // Assuming this points to your login form view
-    }
-
     public function login(Request $request)
-{
-    $credentials = $request->only('email', 'mot_de_passe'); // Extract email and password from request
+    {
+        $email = $request->get('email');
+        $password = $request->get('mot_de_passe');
 
-    $utilisateur = Utilisateur::where('email', $credentials['email'])->first(); // Retrieve user by email from database
+        // User retrieval and validation (consider creating a separate function)
+        $utilisateur = $this->validateCredentials($email, $password);
 
-    // Check if user exists and password is correct
-    if (!$utilisateur || !Hash::check($credentials['mot_de_passe'], $utilisateur->mot_de_passe)) {
-        // Incorrect credentials, redirect back with error message
-        return redirect()->back()->withErrors(['error' => 'Email ou mot de passe incorrect']);
+        // Successful login, create session
+        session()->put('user_id', $utilisateur->id);
+
+        $reservedAnnonce = $request->session()->get('reserved_annonce_data');
+        if ($reservedAnnonce) {
+            $request->session()->forget('reserved_annonce_data');
+            return redirect()->route('reservations.create')->with('annonce', $reservedAnnonce);
+        }
+
+        // Return view with user data and success message (adjust based on your view structure)
+        return redirect()->intended('/')->with('success', 'Vous-êtes connecté avec succès');
     }
-    if ($request->session()->has('reserved_annonce')) {
-        $annonce = $request->session()->get('reserved_annonce');
-        $request->session()->forget('reserved_annonce'); // Nettoyez la session
-        return redirect()->route('reservations.create')->with('annonce', $annonce);
+
+    protected function validateCredentials(string $email, string $password): Utilisateur
+    {
+        $utilisateur = Utilisateur::where('email', $email)->first();
+
+        if (!$utilisateur || !Hash::check($password, $utilisateur->mot_de_passe)) {
+            abort(401, 'Email ou mot de passe incorrect');
+        }
+
+        return $utilisateur;
     }
-
-    // Successful login, create session
-    session()->put('user_id', $utilisateur->id);
-
-    // Return view with user data and success message
-    return view('utilisateurs.show', compact('utilisateur'))->with('success', 'Vous-etes connecter avec succes');
-}
-
-
 
     public function logout()
     {
+        Auth::logout();
         session()->flush();
 
         return redirect()->route('welcome');
     }
-
 }

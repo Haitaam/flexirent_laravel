@@ -194,14 +194,15 @@
             <span>{{ $annonce->commentaires->count() }} commentaires</span>
           </div>
         </div>
-        @if(!Auth::check())
+
         <!-- Si l'utilisateur n'est pas connecté, il est redirigé vers la page de connexion ou d'inscription -->
         <a href="{{ route('login') }}">
           <button class="inline-flex items-center justify-center whitespace-nowrap text-sm ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 font-semibold text-slate-50 hover:bg-slate-500 bg-black h-11 rounded-md px-8 w-full">
             Réserve
           </button>
         </a>
-      @else
+        @if(!Auth::check())
+        @else
         <!-- Si l'utilisateur est connecté, il peut réserver normalement -->
         <!-- Ajoutez ici le lien vers la page de réservation -->
         <a href="{{ route('reservations.create') }}">
